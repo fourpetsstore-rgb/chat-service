@@ -7,8 +7,8 @@ const initializeSocket = (io) => {
 
         // Join a specific conversation
         socket.on('joinConversation', (conversationId) => {
-            console.log("ConId", conversationId)
-            const parsedId = JSON.parse(conversationId);
+            
+            const parsedId = JSON.parse(conversationId).conversation_id;
             socket.join(parsedId);
             console.log(`User joined conversation: ${parsedId}`);
         });
