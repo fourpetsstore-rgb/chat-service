@@ -7,15 +7,15 @@ const initializeSocket = (io) => {
 
         // Join a specific conversation
         socket.on('joinConversation', (conversationId) => {
-            
-            const parsedId = JSON.parse(conversationId).conversation_id;
+
+            const parsedId = conversationId.conversation_id;
             socket.join(parsedId);
             console.log(`User joined conversation: ${parsedId}`);
         });
 
         // Send a new message
         socket.on('sendMessage', async (message) => {
-            const parsedMessage = JSON.parse(message)
+            const parsedMessage = message
             console.log("New message send", parsedMessage.messageContent)
 
             // Save message to Firestore
@@ -47,9 +47,39 @@ const initializeSocket = (io) => {
             });
         });
 
+
+        // Real-time listener for new conversations
+        const conversationsQuery = db.collection("conversations").orderBy("created_at");
+        const unsubscribe = conversationsQuery.onSnapshot(
+            (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        const newConversation = {
+                            id: change.doc.id,
+                            ...change.doc.data(),
+                        };
+
+                        // Emit new conversation to all connected admin clients
+                        io.emit("newConversation", newConversation);
+                        console.log("New conversation detected:", newConversation);
+                    }
+                });
+            },
+            (error) => {
+                console.error("Error listening for new conversations:", error);
+            }
+        );
+
+
         // Handle disconnection
         socket.on('disconnect', () => {
             console.log('A user disconnected');
+        });
+
+
+        // Cleanup Firestore listener on disconnection
+        socket.on("disconnect", () => {
+            unsubscribe();
         });
     });
 };
