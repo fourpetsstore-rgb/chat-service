@@ -1,7 +1,11 @@
 const express = require('express');
-const { getMessages, sendMessage, markMessageAsRead } = require('../controllers/messagesController');
+const { getMessages, sendMessage, markMessageAsRead, uploadFile } = require('../controllers/messagesController');
+const multer = require('multer');
+
 
 const router = express.Router();
+const upload = multer({storage: multer.memoryStorage()});
+
 
 // Get messages for a conversation
 router.get('/:conversationId', getMessages);
@@ -10,6 +14,9 @@ router.get('/:conversationId', getMessages);
 router.post('/:conversationId', sendMessage);
 
 // Mark as read
-router.put('/:conversationId/messages/:messageId/markAsRead', markMessageAsRead)
+router.put('/:conversationId/messages/:messageId/markAsRead', markMessageAsRead);
+
+// Upload a file
+router.post('/upload', upload.single('file'), uploadFile);
 
 module.exports = router;

@@ -1,5 +1,6 @@
-const { db, admin } = require("../firebaseConfig");
-
+const { db, admin, storage } = require("../firebaseConfig");
+const multer = require("multer");
+const { v4: uuidv4 } = require("uuid");
 
 // Get messages for a specific conversation
 const getMessages = async (req, res) => {
@@ -75,8 +76,50 @@ const markMessageAsRead = async (req, res) => {
     }
 };
 
+
+// Configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024, // Limit file size to 5MB
+    },
+});
+
+// Upload file function
+const uploadFile = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const file = req.file;
+    const bucket = storage.bucket(); // Assuming default bucket is set
+
+    const fileName = `${uuidv4()}_${file.originalname}`;
+    const fileUpload = bucket.file(fileName);
+
+    const blobStream = fileUpload.createWriteStream({
+        metadata: {
+            contentType: file.mimetype,
+        },
+    });
+
+    blobStream.on('error', (err) => {
+        res.status(500).json({ error: err.message });
+    });
+
+    blobStream.on('finish', () => {
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileUpload.name}`;
+        res.status(200).json({ fileUrl: publicUrl });
+    });
+
+    blobStream.end(file.buffer);
+};
+
+
+
 module.exports = {
     getMessages,
     sendMessage,
     markMessageAsRead,
+    uploadFile,
 };
