@@ -11,7 +11,7 @@ const initializeSocket = (io) => {
             const parsedId = conversationId.conversation_id;
             console.log("Conversation Id", conversationId)
             socket.join(parsedId);
-            console.log(`User joined conversation: ${parsedId}`);
+            console.log(`User joined conversation: ${parsedId}`)
         });
 
         // Send a new message
