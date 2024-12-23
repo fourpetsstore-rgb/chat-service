@@ -57,6 +57,9 @@ const initializeSocket = (io) => {
             });
         });
 
+        socket.on('newMessage', async (message) => {
+            console.log("New message send from newMessage event", message);
+        })
 
         // Real-time listener for new conversations
         const conversationsQuery = db.collection("conversations").orderBy("created_at");
