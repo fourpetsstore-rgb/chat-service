@@ -19,11 +19,13 @@ const initializeSocket = (io) => {
             const parsedMessage = await JSON.parse(message);
             console.log("New message send", parsedMessage);
 
+
             // Validate conversationId
             if (!parsedMessage.conversationId || typeof parsedMessage.conversationId !== 'string' || parsedMessage.conversationId.trim() === '') {
                 console.error('Invalid conversationId:', parsedMessage.conversationId);
                 return;
             }
+
 
             // Save message to Firestore
             const newMessageRef = await db.collection('conversations')
@@ -45,9 +47,10 @@ const initializeSocket = (io) => {
                 last_message_timestamp: admin.firestore.FieldValue.serverTimestamp()
             });
 
-            const newMessage = (await newMessageRef.get()).data()
 
             // Emit the new message to the conversation room
+            const newMessageSnapshot = await newMessageRef.get();
+            const newMessage = newMessageSnapshot.data();
             io.to(parsedMessage.conversationId).emit('newMessage', {
                 id: newMessageRef.id,
                 ...newMessage,
