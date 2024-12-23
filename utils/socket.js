@@ -10,7 +10,7 @@ const initializeSocket = (io) => {
 
             const conversationId = payload.conversationId;
             console.log("Conversation Id", payload)
-            socket.join(parsedId);
+            socket.join(conversationId);
             console.log(`User joined conversation: ${conversationId}`)
         });
 
