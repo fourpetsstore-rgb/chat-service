@@ -17,7 +17,7 @@ const initializeSocket = (io) => {
         // Send a new message
         socket.on('sendMessage', async (message) => {
             const parsedMessage = message
-            console.log("New message send", parsedMessage.messageContent);
+            console.log("New message send", parsedMessage);
 
             // Validate conversationId
             if (!parsedMessage.conversationId || typeof parsedMessage.conversationId !== 'string' || parsedMessage.conversationId.trim() === '') {
