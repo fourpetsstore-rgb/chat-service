@@ -16,9 +16,8 @@ const initializeSocket = (io) => {
 
         // Send a new message
         socket.on('sendMessage', async (message) => {
-            const parsedMessage = await JSON.parse(message);
-            console.log("New message send", parsedMessage);
-
+            const parsedMessage = message;
+            console.log("New message send", parsedMessage.messageContent);
 
             // Validate conversationId
             if (!parsedMessage.conversationId || typeof parsedMessage.conversationId !== 'string' || parsedMessage.conversationId.trim() === '') {
@@ -26,35 +25,37 @@ const initializeSocket = (io) => {
                 return;
             }
 
+            try {
+                // Save message to Firestore
+                const newMessageRef = await db.collection('conversations')
+                    .doc(parsedMessage.conversationId)
+                    .collection('messages')
+                    .add({
+                        conversation_id: parsedMessage.conversationId,
+                        sender: parsedMessage.sender,
+                        message_content: parsedMessage.messageContent,
+                        attachments: parsedMessage.attachments,
+                        read: false,
+                        end_session: parsedMessage.endSession || false,
+                        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                    });
 
-            // Save message to Firestore
-            const newMessageRef = await db.collection('conversations')
-                .doc(parsedMessage.conversationId)
-                .collection('messages')
-                .add({
-                    conversation_id: parsedMessage.conversationId,
-                    sender: parsedMessage.sender,
-                    message_content: parsedMessage.messageContent,
-                    attachments: parsedMessage.attachments,
-                    read: false,
-                    end_session: parsedMessage.endSession || false,
-                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                // Update the last message in the conversation
+                await db.collection('conversations').doc(parsedMessage.conversationId).update({
+                    last_message: parsedMessage.messageContent,
+                    last_message_timestamp: admin.firestore.FieldValue.serverTimestamp()
                 });
 
-            // Update the last message in the conversation
-            await db.collection('conversations').doc(parsedMessage.conversationId).update({
-                last_message: parsedMessage.messageContent,
-                last_message_timestamp: admin.firestore.FieldValue.serverTimestamp()
-            });
-
-
-            // Emit the new message to the conversation room
-            const newMessageSnapshot = await newMessageRef.get();
-            const newMessage = newMessageSnapshot.data();
-            io.to(parsedMessage.conversationId).emit('newMessage', {
-                id: newMessageRef.id,
-                ...newMessage,
-            });
+                // Emit the new message to the conversation room
+                const newMessageSnapshot = await newMessageRef.get();
+                const newMessage = newMessageSnapshot.data();
+                io.to(parsedMessage.conversationId).emit('newMessage', {
+                    id: newMessageRef.id,
+                    ...newMessage,
+                });
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
         });
 
         socket.on('newMessage', async (message) => {
