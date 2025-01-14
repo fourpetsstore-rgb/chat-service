@@ -5,7 +5,7 @@ const getAllConversations = async (req, res) => {
     const { pageSize = 10, lastVisible = null } = req.query;
 
     try {
-        let query = db.collection('conversations').orderBy('created_at').limit(Number(pageSize));
+        let query = db.collection('conversations').orderBy('created_at', 'desc').limit(Number(pageSize));
 
         if (lastVisible) {
             // If lastVisible exists, start after it for pagination
