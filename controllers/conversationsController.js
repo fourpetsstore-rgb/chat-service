@@ -2,7 +2,7 @@ const { admin, db } = require("../firebaseConfig");
 
 
 const getAllConversations = async (req, res) => {
-    const { pageSize = 10, lastVisible = null } = req.query;
+    const { pageSize, lastVisible } = req.query;
 
     try {
         let query = db.collection('conversations').orderBy('created_at', 'desc').limit(Number(pageSize));
