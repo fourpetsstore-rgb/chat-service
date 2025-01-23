@@ -48,6 +48,15 @@ const createConversation = async (req, res) => {
     const { userId, userName } = req.body;
 
     try {
+        console.log("Conversation Data", {
+            user_id: userId ? userId : "Guest User", // If no user ID is provided, set as "Guest"
+            user_name: userName,
+            admin_assigned: null, // Initially, no admin assigned
+            created_at: admin.firestore.FieldValue.serverTimestamp(),
+            last_message: '',
+            last_message_timestamp: null,
+            status: 'open', // Default status
+        })
         const newConversationRef = await db.collection('conversations').add({
             user_id: userId ? userId : "Guest User", // If no user ID is provided, set as "Guest"
             user_name: userName,
@@ -57,6 +66,7 @@ const createConversation = async (req, res) => {
             last_message_timestamp: null,
             status: 'open', // Default status
         });
+
 
         res.status(201).json({ conversationId: newConversationRef.id });
     } catch (err) {
