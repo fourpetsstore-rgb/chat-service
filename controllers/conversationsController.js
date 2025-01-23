@@ -46,7 +46,10 @@ const getAllConversations = async (req, res) => {
 // Create a new conversation
 const createConversation = async (req, res) => {
     const { userId, userName } = req.body;
-    console.log("Req body", req)
+    console.log("Req body", {
+        userId: userId,
+        userName: userName
+    })
 
     try {
         console.log("Conversation Data", {
