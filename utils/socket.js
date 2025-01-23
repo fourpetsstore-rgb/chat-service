@@ -28,7 +28,7 @@ const initializeSocket = (io) => {
 
             try {
                 const parsedMessage = await JSON.parse(message);
-                // console.log("New message send", parsedMessage);
+                console.log("New message send", parsedMessage);
 
 
                 // Validate conversationId
@@ -62,6 +62,8 @@ const initializeSocket = (io) => {
                         end_session: parsedMessage.endSession || false,
                         timestamp: admin.firestore.FieldValue.serverTimestamp(),
                     });
+
+                    console.log("New message ref", newMessageRef);
 
                 // Update the last message in the conversation
                 await db.collection('conversations').doc(parsedMessage.conversationId).update({
