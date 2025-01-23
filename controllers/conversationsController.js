@@ -49,7 +49,7 @@ const createConversation = async (req, res) => {
 
     try {
         const newConversationRef = await db.collection('conversations').add({
-            user_id: userId,
+            user_id: userId ? userId : "Guest User", // If no user ID is provided, set as "Guest"
             user_name: userName,
             admin_assigned: null, // Initially, no admin assigned
             created_at: admin.firestore.FieldValue.serverTimestamp(),
