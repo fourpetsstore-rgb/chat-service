@@ -78,10 +78,15 @@ const initializeSocket = (io) => {
                     ...newMessage,
                 });
 
-                callback({ status: 'success' });
+                if (callback) {
+                    callback({ status: 'success' });
+                }
+                return;
             } catch (error) {
                 console.error('Error sending message:', error);
-                callback({ status: 'error', message: error.message });
+                if (callback) {
+                    callback({ status: 'error', message: error.message });
+                }
                 socket.emit('error', 'Error sending message');
             }
         });
