@@ -45,38 +45,50 @@ const getAllConversations = async (req, res) => {
 
 // Create a new conversation
 const createConversation = async (req, res) => {
-    const { userId, userName } = req.body;
+    const { userId, userName } = req.body; // Assuming the request body only contains user info
+    const adminMessage = "<span>Hello, how can I assist you today? <br /> مرحباََ! كيف يمكننا مساعدتك؟</span>"; // Admin's first message
+
     console.log("Req body", {
         userId: userId,
-        userName: userName
-    })
+        userName: userName,
+    });
 
     try {
-        console.log("Conversation Data", {
-            user_id: userId ? userId : "Guest User", // If no user ID is provided, set as "Guest"
-            user_name: userName,
-            admin_assigned: null, // Initially, no admin assigned
-            created_at: admin.firestore.FieldValue.serverTimestamp(),
-            last_message: '',
-            last_message_timestamp: null,
-            status: 'open', // Default status
-        })
+        // Create a new conversation document
         const newConversationRef = await db.collection('conversations').add({
             user_id: userId ? userId : "Guest User", // If no user ID is provided, set as "Guest"
             user_name: userName,
             admin_assigned: null, // Initially, no admin assigned
             created_at: admin.firestore.FieldValue.serverTimestamp(),
-            last_message: '',
-            last_message_timestamp: null,
+            last_message: adminMessage, // Set last_message to the admin's first message
+            last_message_timestamp: admin.firestore.FieldValue.serverTimestamp(),
             status: 'open', // Default status
         });
 
+        // Add admin's first message to the 'messages' subcollection
+        await newConversationRef.collection('messages').add({
+            sender: "admin",
+            message_content: adminMessage,
+            attachments: [],
+            read: true, // Initially, mark the message as unread
+            end_session: false,
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
 
+        // Update last_message and last_message_timestamp fields in the conversation document
+        await newConversationRef.update({
+            last_message: adminMessage,
+            last_message_timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // Return the new conversation ID as part of the response
         res.status(201).json({ conversationId: newConversationRef.id });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
+
+
 
 // Get a conversation by its ID
 const getConversationById = async (req, res) => {
