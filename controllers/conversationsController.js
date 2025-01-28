@@ -46,7 +46,7 @@ const getAllConversations = async (req, res) => {
 // Create a new conversation
 const createConversation = async (req, res) => {
     const { userId, userName } = req.body; // Assuming the request body only contains user info
-    const adminMessage = "<span>Hello, how can I assist you today? <br /> مرحباََ! كيف يمكننا مساعدتك؟</span>"; // Admin's first message
+    const adminMessage = "Hello, how can I assist you today?\nمرحباََ! كيف يمكننا مساعدتك؟"; // Admin's first message
 
     console.log("Req body", {
         userId: userId,
