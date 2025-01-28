@@ -63,7 +63,7 @@ const initializeSocket = (io) => {
                         timestamp: admin.firestore.FieldValue.serverTimestamp(),
                     });
 
-                    console.log("New message ref", newMessageRef);
+                // console.log("New message ref", newMessageRef);
 
                 // Update the last message in the conversation
                 await db.collection('conversations').doc(parsedMessage.conversationId).update({
@@ -117,6 +117,9 @@ const initializeSocket = (io) => {
             }
         );
 
+        socket.on('newMessage', (payload) => {
+            console.log("New message", payload);
+        })
 
         // Handle disconnection
         socket.on('disconnect', () => {
