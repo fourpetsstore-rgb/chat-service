@@ -44,7 +44,7 @@ const getAllConversations = async (req, res) => {
 
 
 // Create a new conversation
-const createConversation = async (req, res) => {
+const createConversation = async (req, res, io) => {
     const { userId, userName } = req.body; // Assuming the request body only contains user info
     const adminMessage = `Hello, how can I assist you today?\nمرحباََ! كيف يمكننا مساعدتك؟`; // Admin's first message
 
@@ -66,7 +66,7 @@ const createConversation = async (req, res) => {
         });
 
         // Add admin's first message to the 'messages' subcollection
-        await newConversationRef.collection('messages').add({
+        const newMessageRef = await newConversationRef.collection('messages').add({
             sender: "admin",
             message_content: adminMessage,
             attachments: [],
@@ -81,12 +81,21 @@ const createConversation = async (req, res) => {
             last_message_timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
 
+        // Emit the auto-response message to the conversation room
+        const newMessageSnapshot = await newMessageRef.get();
+        const newMessage = newMessageSnapshot.data();
+        io.to(newConversationRef.id).emit('newMessage', {
+            id: newMessageRef.id,
+            ...newMessage,
+        });
+
         // Return the new conversation ID as part of the response
         res.status(201).json({ conversationId: newConversationRef.id });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
+
 
 
 

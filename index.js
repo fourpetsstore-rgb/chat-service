@@ -36,6 +36,8 @@ const io = socketIo(server, {
 });
 initializeSocket(io);
 
+// Set io in the app context
+app.set('io', io);
 
 // Start server
 const PORT = process.env.PORT || 5000;
