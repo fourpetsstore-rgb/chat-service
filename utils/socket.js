@@ -42,7 +42,7 @@ const initializeSocket = (io) => {
                     socket.emit('error', { type: 'VALIDATION_ERROR', message: 'Invalid sender' });
                     return;
                 }
-                if (!parsedMessage.messageContent || typeof parsedMessage.messageContent !== 'string') {
+                if (!parsedMessage?.messageContent && !parsedMessage?.attachments) {
                     socket.emit('error', { type: 'VALIDATION_ERROR', message: 'Invalid message content' });
                     return;
                 }
