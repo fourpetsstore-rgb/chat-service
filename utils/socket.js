@@ -27,7 +27,7 @@ const initializeSocket = (io) => {
         socket.on('sendMessage', async (message, callback) => {
 
             try {
-                console.log("New message send", message);
+                // console.log("New message send", message);
                 const parsedMessage = await JSON.parse(message);
 
 
@@ -107,7 +107,7 @@ const initializeSocket = (io) => {
 
                         // Emit new conversation to all connected admin clients
                         io.emit("newConversation", newConversation);
-                        console.log("New conversation detected:", newConversation);
+                        // console.log("New conversation detected:", newConversation);
                     }
                 });
             },

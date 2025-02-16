@@ -27,7 +27,7 @@ const getMessages = async (req, res) => {
 const sendMessage = async (req, res) => {
     const { conversationId } = req.params;
     const { sender, messageContent, attachments, endSession } = req.body;
-    console.log("Body", req.body)
+    // console.log("Body", req.body)
     try {
         const newMessageRef = await db.collection('conversations')
             .doc(conversationId)
