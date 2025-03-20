@@ -99,14 +99,14 @@ const initializeSocket = (io) => {
         const unsubscribe = conversationsQuery.onSnapshot(
             (snapshot) => {
                 snapshot.docChanges().forEach(async (change) => {
-                    if (change.type === "added") {
+                    if (change.type === "added" || change.type === "modified") {
                         const newConversation = {
                             id: change.doc.id,
                             ...change.doc.data(),
                         };
 
                         const messages = await db.collection('conversations').doc(newConversation.id).collection('messages').get();
-                        console.log("Messages", messages.docs.map(doc => doc.data()));
+                        // console.log("Messages", messages.docs.map(doc => doc.data()));
                         // Emit new conversation to all connected admin clients
                         if (newConversation?.status === 'open' && messages?.length > 1) {
                             io.emit("newConversation", newConversation);
