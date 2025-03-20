@@ -32,7 +32,9 @@ const getAllConversations = async (req, res) => {
         // Get the last document in the snapshot for pagination
         const lastDoc = snapshot.docs[snapshot.docs.length - 1];
 
-        const filteredConversations = conversations.filter(conversation => conversation.messages.length > 1);
+        console.log("Conversations", conversations.length);
+        const filteredConversations = conversations?.filter(conversation => conversation.messages.length > 1);
+        console.log("Filtered Conversations", filteredConversations.length);
 
         res.status(200).json({
             filteredConversations,

@@ -105,10 +105,13 @@ const initializeSocket = (io) => {
                             ...change.doc.data(),
                         };
 
-                        const messages = await db.collection('conversations').doc(newConversation.id).collection('messages').get();
-                        // console.log("Messages", messages.docs.map(doc => doc.data()));
+                        const messagesResponse = await db.collection('conversations').doc(newConversation.id).collection('messages').get();
+                        const messages = messagesResponse?.docs.map(doc => doc.data());
+
                         // Emit new conversation to all connected admin clients
+                        console.log("New conversation messages", messages?.length);
                         if (newConversation?.status === 'open' && messages?.length > 1) {
+                            console.log("Emmiting new conversation")
                             io.emit("newConversation", newConversation);
                         }
                         // console.log("New conversation detected:", newConversation);
