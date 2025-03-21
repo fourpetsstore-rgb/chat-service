@@ -30,7 +30,7 @@ const getAllConversations = async (req, res) => {
         }));
 
         // Get the last document in the snapshot for pagination
-        const lastDoc = snapshot.docs[snapshot.docs.data().length - 1];
+        const lastDoc = snapshot.docs[snapshot.docs?.length - 1];
 
         res.status(200).json({
             conversations,
