@@ -30,14 +30,10 @@ const getAllConversations = async (req, res) => {
         }));
 
         // Get the last document in the snapshot for pagination
-        const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-
-        console.log("Conversations", conversations.length);
-        const filteredConversations = conversations?.filter(conversation => conversation.messages.length > 1);
-        console.log("Filtered Conversations", filteredConversations.length);
+        const lastDoc = snapshot.docs[snapshot.docs.data().length - 1];
 
         res.status(200).json({
-            filteredConversations,
+            conversations,
             lastVisible: lastDoc.id,  // Provide lastVisible document ID for pagination
         });
     } catch (err) {
@@ -83,6 +79,7 @@ const createConversation = async (req, res, io) => {
         await newConversationRef.update({
             last_message: adminMessage,
             last_message_timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            messages_count: 0, // Initially, no messages in the conversation. Ignore the admin's first message for count purposes.
         });
 
         // Emit the auto-response message to the conversation room

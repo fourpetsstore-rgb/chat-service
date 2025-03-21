@@ -68,7 +68,8 @@ const initializeSocket = (io) => {
                 // Update the last message in the conversation
                 await db.collection('conversations').doc(parsedMessage.conversationId).update({
                     last_message: parsedMessage.messageContent,
-                    last_message_timestamp: admin.firestore.FieldValue.serverTimestamp()
+                    last_message_timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                    messages_count: admin.firestore.FieldValue.increment(1),
                 });
 
 
