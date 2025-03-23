@@ -79,6 +79,7 @@ const markMessageAsRead = async (req, res) => {
 // Mark all messages as read
 const markAllMessagesAsRead = async (req, res) => {
     const { conversationId } = req.params;
+    console.log("Conv id", conversationId)
 
     try {
         // 1. Verify conversation exists
@@ -86,7 +87,7 @@ const markAllMessagesAsRead = async (req, res) => {
         const convDoc = await convRef.get();
 
         if (!convDoc.exists) {
-            return res.status(404).json({ error: 'Conversation not found' });
+            return res.status(404).json({ error: `Conversation with id: ${conversationId} not found` });
         }
 
         // 2. Get unread messages
