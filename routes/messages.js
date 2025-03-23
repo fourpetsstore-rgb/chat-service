@@ -17,7 +17,10 @@ router.post('/:conversationId', sendMessage);
 router.put('/:conversationId/messages/:messageId/markAsRead', markMessageAsRead);
 
 // Mark all as read
-router.put('/:conversationId/markAllAsRead', markAllMessagesAsRead);
+router.put('/:conversationId/markAllAsRead', (req, res) => {
+    const io = req.app.get('io'); // Retrieve io from the app context
+    markAllMessagesAsRead(req, res, io)
+});
 
 // Upload a file
 router.post('/upload', upload.single('file'), uploadFile);

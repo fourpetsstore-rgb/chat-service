@@ -1,3 +1,4 @@
+const { getConversationById } = require("../controllers/conversationsController");
 const { db, admin } = require("../firebaseConfig");
 
 
@@ -135,7 +136,21 @@ const initializeSocket = (io) => {
             }
         );
 
-        socket.on('newMessage', (payload) => {
+        // Real-time listener for new messages
+        socket.on('newMessage', async (payload) => {
+            // Emit the newConversation event to all connected clients
+            const conversation = getConversationById(payload.conversationId);
+            if (conversation) {
+                // Get conversation messages
+                const messagesResponse = await db.collection('conversations').doc(conversation.id).collection('messages').get();
+                const messages = messagesResponse?.docs.map(doc => doc.data());
+
+                io.emit("newConversation", {
+                    id: conversation.id,
+                    ...conversation,
+                    messages: messages,
+                })
+            }
             console.log("New message", payload);
         })
 

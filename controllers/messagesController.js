@@ -77,9 +77,8 @@ const markMessageAsRead = async (req, res) => {
 };
 
 // Mark all messages as read
-const markAllMessagesAsRead = async (req, res) => {
+const markAllMessagesAsRead = async (req, res, socket) => {
     const { conversationId } = req.params;
-    console.log("Conv id", conversationId)
 
     try {
         // 1. Verify conversation exists
@@ -120,6 +119,12 @@ const markAllMessagesAsRead = async (req, res) => {
             console.error('Failed to update some messages:', updatedSnapshot.size);
         }
 
+        // 6. Emit event to the conversation room
+        socket.emit("markAllAsRead", {
+            id: conversationId,
+            ...convDoc.data(),
+            messages: updatedSnapshot.docs.map(doc => doc.data())
+        });
         res.status(200).json({
             message: 'Marked all messages as read',
             updatedCount: batchSize
