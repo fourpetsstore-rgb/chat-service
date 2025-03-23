@@ -81,29 +81,53 @@ const markAllMessagesAsRead = async (req, res) => {
     const { conversationId } = req.params;
 
     try {
-        const snapshot = await db.collection('conversations')
-            .doc(conversationId)
-            .collection('messages')
-            .where('read', '==', false)
-            .get();
+        // 1. Verify conversation exists
+        const convRef = db.collection('conversations').doc(conversationId);
+        const convDoc = await convRef.get();
 
+        if (!convDoc.exists) {
+            return res.status(404).json({ error: 'Conversation not found' });
+        }
+
+        // 2. Get unread messages
+        const messagesRef = convRef.collection('messages');
+        const snapshot = await messagesRef.where('read', '==', false).get();
+
+        if (snapshot.empty) {
+            return res.status(200).json({ message: 'No unread messages to update' });
+        }
+
+        // 3. Handle batch limits
+        const batchSize = snapshot.size;
+        if (batchSize > 500) {
+            return res.status(400).json({
+                error: `Cannot update ${batchSize} messages at once (max 500)`
+            });
+        }
+
+        // 4. Update documents
         const batch = db.batch();
         snapshot.docs.forEach(doc => {
-            const messageRef = db.collection('conversations')
-                .doc(conversationId)
-                .collection('messages')
-                .doc(doc.id);
-            batch.update(messageRef, { read: true });
+            batch.update(doc.ref, { read: true });
         });
 
         await batch.commit();
 
-        res.status(200).json({ message: 'All messages marked as read' });
+        // 5. Verify updates
+        const updatedSnapshot = await messagesRef.where('read', '==', false).get();
+        if (updatedSnapshot.size > 0) {
+            console.error('Failed to update some messages:', updatedSnapshot.size);
+        }
+
+        res.status(200).json({
+            message: 'Marked all messages as read',
+            updatedCount: batchSize
+        });
     } catch (err) {
+        console.error('Error:', err);
         res.status(500).json({ error: err.message });
     }
 };
-
 
 // Configure multer for file uploads
 const upload = multer({
