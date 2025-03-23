@@ -76,6 +76,34 @@ const markMessageAsRead = async (req, res) => {
     }
 };
 
+// Mark all messages as read
+const markAllMessagesAsRead = async (req, res) => {
+    const { conversationId } = req.params;
+
+    try {
+        const snapshot = await db.collection('conversations')
+            .doc(conversationId)
+            .collection('messages')
+            .where('read', '==', false)
+            .get();
+
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => {
+            const messageRef = db.collection('conversations')
+                .doc(conversationId)
+                .collection('messages')
+                .doc(doc.id);
+            batch.update(messageRef, { read: true });
+        });
+
+        await batch.commit();
+
+        res.status(200).json({ message: 'All messages marked as read' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 
 // Configure multer for file uploads
 const upload = multer({
@@ -121,5 +149,6 @@ module.exports = {
     getMessages,
     sendMessage,
     markMessageAsRead,
+    markAllMessagesAsRead,
     uploadFile,
 };

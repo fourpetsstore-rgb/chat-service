@@ -101,13 +101,19 @@ const initializeSocket = (io) => {
             (snapshot) => {
                 snapshot.docChanges().forEach(async (change) => {
                     if (change.type === "added" || change.type === "modified") {
-                        const conversation = {
+                        let conversation = {
                             id: change.doc.id,
                             ...change.doc.data(),
                         };
 
                         const messagesResponse = await db.collection('conversations').doc(conversation.id).collection('messages').get();
                         const messages = messagesResponse?.docs.map(doc => doc.data());
+
+                        conversation = {
+                            id: change.doc.id,
+                            ...change.doc.data(),
+                            messages: messages,
+                        }
 
                         // Emit new conversation to all connected admin clients
                         if (conversation?.status === 'open' && messages?.length > 1) {
