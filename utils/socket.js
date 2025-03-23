@@ -101,21 +101,25 @@ const initializeSocket = (io) => {
             (snapshot) => {
                 snapshot.docChanges().forEach(async (change) => {
                     if (change.type === "added" || change.type === "modified") {
-                        const newConversation = {
+                        const conversation = {
                             id: change.doc.id,
                             ...change.doc.data(),
                         };
 
-                        const messagesResponse = await db.collection('conversations').doc(newConversation.id).collection('messages').get();
+                        const messagesResponse = await db.collection('conversations').doc(conversation.id).collection('messages').get();
                         const messages = messagesResponse?.docs.map(doc => doc.data());
 
                         // Emit new conversation to all connected admin clients
-                        console.log("New conversation messages", messages?.length);
-                        if (newConversation?.status === 'open' && messages?.length > 1) {
+                        if (conversation?.status === 'open' && messages?.length > 1) {
                             console.log("Emmiting new conversation")
-                            io.emit("newConversation", newConversation);
+                            io.emit("newConversation", conversation);
                         }
-                        // console.log("New conversation detected:", newConversation);
+
+
+                        if (conversation.status === 'closed') {
+                            console.log("Emmiting closed conversation")
+                            io.emit("closedConversation", conversation);
+                        }
                     }
                 });
             },
