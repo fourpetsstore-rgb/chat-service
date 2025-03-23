@@ -42,7 +42,6 @@ const getAllConversations = async (req, res) => {
 };
 
 
-
 // Create a new conversation
 const createConversation = async (req, res, io) => {
     const { userId, userName } = req.body; // Assuming the request body only contains user info
@@ -98,8 +97,6 @@ const createConversation = async (req, res, io) => {
 };
 
 
-
-
 // Get a conversation by its ID
 const getConversationById = async (req, res) => {
     const { conversationId } = req.params;
@@ -122,14 +119,18 @@ const getConversationById = async (req, res) => {
 // Update conversation (e.g., assigning an admin or changing status)
 const updateConversation = async (req, res) => {
     const { conversationId } = req.params;
-    const { adminAssigned, status } = req.body;
+    const { status } = req.body;
+
+    if (!status) {
+        return res.status(400).json({ error: 'Status is required' });
+    }
 
     try {
         const conversationRef = db.collection('conversations').doc(conversationId);
         await conversationRef.update({
-            admin_assigned: adminAssigned,
+            admin_assigned: req.body?.adminAssigned || null,
             status: status,
-            last_message_timestamp: new Date(), // Update the last message timestamp
+            // last_message_timestamp: new Date(), // Update the last message timestamp
         });
 
         res.status(200).json({ message: 'Conversation updated successfully' });
