@@ -17,7 +17,7 @@ router.post('/:conversationId', sendMessage);
 router.put('/:conversationId/messages/:messageId/markAsRead', markMessageAsRead);
 
 // Mark all as read
-router.put('/:conversationId/messages/markAllAsRead', markAllMessagesAsRead);
+router.put('/:conversationId/markAllAsRead', markAllMessagesAsRead);
 
 // Upload a file
 router.post('/upload', upload.single('file'), uploadFile);
