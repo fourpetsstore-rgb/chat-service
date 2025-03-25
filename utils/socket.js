@@ -146,7 +146,7 @@ const initializeSocket = (io) => {
                                 console.log("Messages per conversation count", msgSnapshot.size);
                                 msgSnapshot.docChanges().forEach((msgChange) => {
                                     if (msgChange.type === "added") {
-                                        // const message = msgChange.doc.data();
+                                        const message = msgChange.doc.data();
                                         // io.to(conversation.id).emit('newMessage', {
                                         //     id: msgChange.doc.id,
                                         //     ...message
