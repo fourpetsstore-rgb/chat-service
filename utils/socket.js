@@ -215,8 +215,8 @@ const initializeSocket = (io) => {
         // Handle disconnection
         socket.on('disconnect', () => {
             console.log('A user disconnected');
-            unsubscribeOpen();
-            unsubscribeClosed();
+            // unsubscribeOpen();
+            // unsubscribeClosed();
 
             // activeMessageListeners.forEach((unsub, id) => {
             //     unsub();
