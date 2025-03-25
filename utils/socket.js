@@ -107,13 +107,7 @@ const initializeSocket = (io) => {
             .orderBy("created_at")
             .startAfter(oneDayAgo);
 
-        openConvosQuery.count().get()
-            .then(snapshot => {
-                console.log("Conversations count:", snapshot.data().count);
-            })
-            .catch(error => {
-                console.error("Error fetching count:", error);
-            });
+
 
         // For closed conversations
         const closedConvosQuery = db.collection("conversations")
@@ -142,8 +136,19 @@ const initializeSocket = (io) => {
                             .collection('messages')
                             .orderBy('timestamp', 'desc')
                             .limit(50)
-                            .onSnapshot((msgSnapshot) => {
-                                console.log("Messages per conversation count", msgSnapshot.size);
+
+                        let messagesCount = 0;
+                        openConvosQuery.count().get()
+                            .then(snapshot => {
+                                console.log("Conversations count:", snapshot.data().count);
+                                messagesCount = snapshot.data().count;
+                            })
+                            .catch(error => {
+                                console.error("Error fetching count:", error);
+                            });
+
+                        if (messagesCount > 1) {
+                            messageListener.onSnapshot((msgSnapshot) => {
                                 msgSnapshot.docChanges().forEach((msgChange) => {
                                     if (msgChange.type === "added") {
                                         const message = msgChange.doc.data();
@@ -160,8 +165,8 @@ const initializeSocket = (io) => {
                                 });
                             });
 
-                        activeMessageListeners.set(conversation.id, messageListener);
-
+                            activeMessageListeners.set(conversation.id, messageListener);
+                        }
 
                         // Throttle emission per conversation:
                         const lastEmission = lastOpenEmissionMap.get(conversation.id) || 0;
