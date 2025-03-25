@@ -100,7 +100,7 @@ const initializeSocket = (io) => {
         // For new conversations
         const openConvosQuery = db.collection("conversations")
             .where("status", "==", "open")
-            .orderBy("created_at").startAfter(admin.firestore.Timestamp.now().toMillis() - 60000) // 1 minute
+            .orderBy("created_at").startAfter(admin.firestore.Timestamp.now().toMillis() - 86400000) // 1 day
 
         // For closed conversations
         const closedConvosQuery = db.collection("conversations")
@@ -124,7 +124,7 @@ const initializeSocket = (io) => {
                         previousConversations.set(conversation.id, conversation.status);
 
                         // Start message listener
-                        const messageListener = db.collection('conversations')
+                        const messageListener = await db.collection('conversations')
                             .doc(conversation.id)
                             .collection('messages')
                             .orderBy('created_at', 'desc')
@@ -133,11 +133,8 @@ const initializeSocket = (io) => {
                                 msgSnapshot.docChanges().forEach((msgChange) => {
                                     if (msgChange.type === "added") {
                                         const message = msgChange.doc.data();
-                                        conversation.messages.push(message);
-                                        // io.to(conversation.id).emit('newMessage', {
-                                        //     id: msgChange.doc.id,
-                                        //     ...message
-                                        // });
+                                        conversation.messages = [message, ...conversation.messages];
+                
                                         io.emit('conversationUpdate', {
                                             id: conversation.id,
                                             lastMessage: message.message_content,
