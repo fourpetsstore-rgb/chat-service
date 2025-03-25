@@ -98,10 +98,22 @@ const initializeSocket = (io) => {
 
         // Real-time listener for new conversations
         // For new conversations
+        const oneDayAgo = admin.firestore.Timestamp.fromMillis(
+            admin.firestore.Timestamp.now().toMillis() - 86400000
+        );
+
         const openConvosQuery = db.collection("conversations")
             .where("status", "==", "open")
-            .orderBy("created_at").startAfter(admin.firestore.Timestamp.now().toMillis() - 86400000) // 1 day
-            console.log("Conversations length", openConvosQuery.count());
+            .orderBy("created_at")
+            .startAfter(oneDayAgo);
+
+        openConvosQuery.count().get()
+            .then(snapshot => {
+                console.log("Conversations count:", snapshot.data().count);
+            })
+            .catch(error => {
+                console.error("Error fetching count:", error);
+            });
 
         // For closed conversations
         const closedConvosQuery = db.collection("conversations")
@@ -131,7 +143,7 @@ const initializeSocket = (io) => {
                             .orderBy('timestamp', 'desc')
                             .limit(50)
                             .onSnapshot((msgSnapshot) => {
-                                console.log("Messages per conversation count", msgSnapshot.count());
+                                console.log("Messages per conversation count", msgSnapshot.size);
                                 msgSnapshot.docChanges().forEach((msgChange) => {
                                     if (msgChange.type === "added") {
                                         // const message = msgChange.doc.data();
