@@ -97,67 +97,108 @@ const initializeSocket = (io) => {
 
 
         // Real-time listener for new conversations
-        const conversationsQuery = db.collection("conversations").orderBy("created_at");
-        const unsubscribe = conversationsQuery.onSnapshot(
+        // For new conversations
+        const openConvosQuery = db.collection("conversations")
+            .where("status", "==", "open")
+            .orderBy("created_at").startAfter(admin.firestore.Timestamp.now().toMillis() - 60000) // 1 minute
+
+        // For closed conversations
+        const closedConvosQuery = db.collection("conversations")
+            .where("status", "==", "closed");
+
+
+        const previousConversations = new Map();
+
+        // Track active message listeners per conversation
+        const activeMessageListeners = new Map();
+
+        const lastOpenEmissionMap = new Map();
+        const THROTTLE_INTERVAL = 2000; // 2 second
+
+        const unsubscribeOpen = openConvosQuery.onSnapshot(
             (snapshot) => {
                 snapshot.docChanges().forEach(async (change) => {
-                    if (change.type === "added" || change.type === "modified") {
-                        let conversation = {
-                            id: change.doc.id,
-                            ...change.doc.data(),
-                        };
+                    if (change.type === "added") {
+                        const conversation = { id: change.doc.id, ...change.doc.data(), messages: [] };
+                        // Set initial status
+                        previousConversations.set(conversation.id, conversation.status);
 
-                        const messagesResponse = await db.collection('conversations').doc(conversation.id).collection('messages').get();
-                        const messages = messagesResponse?.docs.map(doc => doc.data());
+                        // Start message listener
+                        const messageListener = db.collection('conversations')
+                            .doc(conversation.id)
+                            .collection('messages')
+                            .orderBy('timestamp', 'desc')
+                            .limit(50)
+                            .onSnapshot((msgSnapshot) => {
+                                msgSnapshot.docChanges().forEach((msgChange) => {
+                                    if (msgChange.type === "added") {
+                                        const message = msgChange.doc.data();
+                                        io.to(conversation.id).emit('newMessage', {
+                                            id: msgChange.doc.id,
+                                            ...message
+                                        });
+                                        io.emit('conversationUpdate', {
+                                            id: conversation.id,
+                                            lastMessage: message.message_content,
+                                            messageCount: msgSnapshot.size
+                                        });
+                                    }
+                                });
+                            });
 
-                        conversation = {
-                            id: change.doc.id,
-                            ...change.doc.data(),
-                            messages: messages,
-                        }
+                        activeMessageListeners.set(conversation.id, messageListener);
 
-                        // Emit new conversation to all connected admin clients
-                        if (conversation?.status === 'open' && messages?.length > 1) {
-                            console.log("Emmiting new conversation")
+
+                        // Throttle emission per conversation:
+                        const lastEmission = lastOpenEmissionMap.get(conversation.id) || 0;
+                        if (Date.now() - lastEmission > THROTTLE_INTERVAL) {
+                            console.log("Emitting new conversation", conversation.id);
                             io.emit("newConversation", conversation);
-                        }
-
-
-                        if (conversation.status === 'closed') {
-                            console.log("Emmiting closed conversation")
-                            io.emit("closedConversation", conversation);
+                            lastOpenEmissionMap.set(conversation.id, Date.now());
                         }
                     }
                 });
-            },
-            (error) => {
-                console.error('Error listening to conversations:', error);
-                socket.emit('error', 'Error listening to conversations: ' + error.message);
-            }
-        );
+            });
 
-        // Real-time listener for new messages
-        socket.on('newMessage', async (payload) => {
-            // Emit the newConversation event to all connected clients
-            const conversation = getConversationById(payload.conversationId);
-            if (conversation) {
-                // Get conversation messages
-                const messagesResponse = await db.collection('conversations').doc(conversation.id).collection('messages').get();
-                const messages = messagesResponse?.docs.map(doc => doc.data());
 
-                io.emit("newConversation", {
-                    id: conversation.id,
-                    ...conversation,
-                    messages: messages,
-                })
-            }
-            console.log("New message", payload);
-        })
+
+
+        const lastClosedEmissionMap = new Map();
+        const CLOSED_THROTTLE_INTERVAL = 2000;
+
+        const unsubscribeClosed = closedConvosQuery.onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                const conversation = { id: change.doc.id, ...change.doc.data() };
+                const previousStatus = previousConversations.get(conversation.id);
+
+                // Cleanup message listener when conversation closes
+                if (activeMessageListeners.has(conversation.id)) {
+                    activeMessageListeners.get(conversation.id)();
+                    activeMessageListeners.delete(conversation.id);
+                }
+
+
+                // Only emit if status changed and sufficient time has passed
+                const lastEmission = lastClosedEmissionMap.get(conversation.id) || 0;
+                if (previousStatus !== "closed" && Date.now() - lastEmission > CLOSED_THROTTLE_INTERVAL) {
+                    previousConversations.set(conversation.id, "closed");
+                    io.emit("closedConversation", conversation);
+                    lastClosedEmissionMap.set(conversation.id, Date.now());
+                }
+            });
+        });
+
 
         // Handle disconnection
         socket.on('disconnect', () => {
             console.log('A user disconnected');
-            unsubscribe();
+            unsubscribeOpen();
+            unsubscribeClosed();
+
+            activeMessageListeners.forEach((unsub, id) => {
+                unsub();
+                activeMessageListeners.delete(id);
+            });
         });
 
     });
