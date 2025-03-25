@@ -151,7 +151,11 @@ const initializeSocket = (io) => {
 
                         // Throttle emission per conversation:
                         const lastEmission = lastOpenEmissionMap.get(conversation.id) || 0;
-                        if (Date.now() - lastEmission > THROTTLE_INTERVAL) {
+                        if (
+                            Date.now() - lastEmission > THROTTLE_INTERVAL
+                            && conversation?.status === 'open'
+                            && messages?.length > 1
+                        ) {
                             console.log("Emitting new conversation", conversation.id);
                             io.emit("newConversation", conversation);
                             lastOpenEmissionMap.set(conversation.id, Date.now());
