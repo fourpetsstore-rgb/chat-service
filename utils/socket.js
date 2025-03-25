@@ -127,7 +127,7 @@ const initializeSocket = (io) => {
                         const messageListener = db.collection('conversations')
                             .doc(conversation.id)
                             .collection('messages')
-                            .orderBy('timestamp', 'desc')
+                            .orderBy('created_at', 'desc')
                             .limit(50)
                             .onSnapshot((msgSnapshot) => {
                                 msgSnapshot.docChanges().forEach((msgChange) => {
