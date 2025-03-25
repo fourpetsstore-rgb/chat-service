@@ -101,16 +101,7 @@ const initializeSocket = (io) => {
         const openConvosQuery = db.collection("conversations")
             .where("status", "==", "open")
             .orderBy("created_at").startAfter(admin.firestore.Timestamp.now().toMillis() - 86400000) // 1 day
-
-            openConvosQuery.get().then((snapshot) => {
-                console.log(`Open conversations count: ${snapshot.size}`);
-                // snapshot.forEach((doc) => {
-                //     console.log(doc.id, '=>', doc.data());
-                // });
-            }).catch((error) => {
-                console.error('Error fetching open conversations:', error);
-            });
-
+            console.log("Conversations length", openConvosQuery.size());
 
         // For closed conversations
         const closedConvosQuery = db.collection("conversations")
@@ -134,17 +125,20 @@ const initializeSocket = (io) => {
                         previousConversations.set(conversation.id, conversation.status);
 
                         // Start message listener
-                        const messageListener = await db.collection('conversations')
+                        const messageListener = db.collection('conversations')
                             .doc(conversation.id)
                             .collection('messages')
-                            .orderBy('created_at', 'desc')
+                            .orderBy('timestamp', 'desc')
                             .limit(50)
                             .onSnapshot((msgSnapshot) => {
+                                console.log("Messages per conversation count", msgSnapshot.size());
                                 msgSnapshot.docChanges().forEach((msgChange) => {
                                     if (msgChange.type === "added") {
-                                        const message = msgChange.doc.data();
-                                        conversation.messages = [message, ...conversation.messages];
-                
+                                        // const message = msgChange.doc.data();
+                                        // io.to(conversation.id).emit('newMessage', {
+                                        //     id: msgChange.doc.id,
+                                        //     ...message
+                                        // });
                                         io.emit('conversationUpdate', {
                                             id: conversation.id,
                                             lastMessage: message.message_content,
@@ -162,7 +156,7 @@ const initializeSocket = (io) => {
                         if (
                             Date.now() - lastEmission > THROTTLE_INTERVAL
                             && conversation?.status === 'open'
-                            && conversation?.messages?.length > 1
+                            && conversation.messages?.length > 1
                         ) {
                             console.log("Emitting new conversation", conversation.id);
                             io.emit("newConversation", conversation);
