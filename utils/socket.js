@@ -98,118 +98,118 @@ const initializeSocket = (io) => {
 
         // Real-time listener for new conversations
         // For new conversations
-        const oneDayAgo = admin.firestore.Timestamp.fromMillis(
-            admin.firestore.Timestamp.now().toMillis() - 86400000
-        );
+        // const oneDayAgo = admin.firestore.Timestamp.fromMillis(
+        //     admin.firestore.Timestamp.now().toMillis() - 86400000
+        // );
 
-        const openConvosQuery = db.collection("conversations")
-            .where("status", "==", "open")
-            .orderBy("created_at")
-            .startAfter(oneDayAgo);
-
-
-
-        // For closed conversations
-        const closedConvosQuery = db.collection("conversations")
-            .where("status", "==", "closed");
-
-
-        const previousConversations = new Map();
-
-        // Track active message listeners per conversation
-        const activeMessageListeners = new Map();
-
-        const lastOpenEmissionMap = new Map();
-        const THROTTLE_INTERVAL = 2000; // 2 second
-
-        const unsubscribeOpen = openConvosQuery.onSnapshot(
-            (snapshot) => {
-                snapshot.docChanges().forEach(async (change) => {
-                    if (change.type === "added") {
-                        const conversation = { id: change.doc.id, ...change.doc.data(), messages: [] };
-                        // Set initial status
-                        previousConversations.set(conversation.id, conversation.status);
-
-                        // Start message listener
-                        const messageListener = db.collection('conversations')
-                            .doc(conversation.id)
-                            .collection('messages')
-                            .orderBy('timestamp', 'desc')
-                            .limit(50)
-
-                        let messagesCount = 0;
-                        openConvosQuery.count().get()
-                            .then(snapshot => {
-                                console.log("Conversations count:", snapshot.data().count);
-                                messagesCount = snapshot.data().count;
-                            })
-                            .catch(error => {
-                                console.error("Error fetching count:", error);
-                            });
-
-                        if (messagesCount > 1) {
-                            messageListener.onSnapshot((msgSnapshot) => {
-                                msgSnapshot.docChanges().forEach((msgChange) => {
-                                    if (msgChange.type === "added") {
-                                        const message = msgChange.doc.data();
-                                        // io.to(conversation.id).emit('newMessage', {
-                                        //     id: msgChange.doc.id,
-                                        //     ...message
-                                        // });
-                                        io.emit('conversationUpdate', {
-                                            id: conversation.id,
-                                            lastMessage: message.message_content,
-                                            messageCount: msgSnapshot.size
-                                        });
-                                    }
-                                });
-                            });
-
-                            activeMessageListeners.set(conversation.id, messageListener);
-                        }
-
-                        // Throttle emission per conversation:
-                        const lastEmission = lastOpenEmissionMap.get(conversation.id) || 0;
-                        if (
-                            Date.now() - lastEmission > THROTTLE_INTERVAL
-                            && conversation?.status === 'open'
-                            && conversation.messages?.length > 1
-                        ) {
-                            console.log("Emitting new conversation", conversation.id);
-                            io.emit("newConversation", conversation);
-                            lastOpenEmissionMap.set(conversation.id, Date.now());
-                        }
-                    }
-                });
-            });
+        // const openConvosQuery = db.collection("conversations")
+        //     .where("status", "==", "open")
+        //     .orderBy("created_at")
+        //     .startAfter(oneDayAgo);
 
 
 
-
-        const lastClosedEmissionMap = new Map();
-        const CLOSED_THROTTLE_INTERVAL = 2000;
-
-        const unsubscribeClosed = closedConvosQuery.onSnapshot((snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                const conversation = { id: change.doc.id, ...change.doc.data() };
-                const previousStatus = previousConversations.get(conversation.id);
-
-                // Cleanup message listener when conversation closes
-                if (activeMessageListeners.has(conversation.id)) {
-                    activeMessageListeners.get(conversation.id)();
-                    activeMessageListeners.delete(conversation.id);
-                }
+        // // For closed conversations
+        // const closedConvosQuery = db.collection("conversations")
+        //     .where("status", "==", "closed");
 
 
-                // Only emit if status changed and sufficient time has passed
-                const lastEmission = lastClosedEmissionMap.get(conversation.id) || 0;
-                if (previousStatus !== "closed" && Date.now() - lastEmission > CLOSED_THROTTLE_INTERVAL) {
-                    previousConversations.set(conversation.id, "closed");
-                    io.emit("closedConversation", conversation);
-                    lastClosedEmissionMap.set(conversation.id, Date.now());
-                }
-            });
-        });
+        // const previousConversations = new Map();
+
+        // // Track active message listeners per conversation
+        // const activeMessageListeners = new Map();
+
+        // const lastOpenEmissionMap = new Map();
+        // const THROTTLE_INTERVAL = 2000; // 2 second
+
+        // const unsubscribeOpen = openConvosQuery.onSnapshot(
+        //     (snapshot) => {
+        //         snapshot.docChanges().forEach(async (change) => {
+        //             if (change.type === "added") {
+        //                 const conversation = { id: change.doc.id, ...change.doc.data(), messages: [] };
+        //                 // Set initial status
+        //                 previousConversations.set(conversation.id, conversation.status);
+
+        //                 // Start message listener
+        //                 const messageListener = db.collection('conversations')
+        //                     .doc(conversation.id)
+        //                     .collection('messages')
+        //                     .orderBy('timestamp', 'desc')
+        //                     .limit(50)
+
+        //                 let messagesCount = 0;
+        //                 openConvosQuery.count().get()
+        //                     .then(snapshot => {
+        //                         console.log("Conversations count:", snapshot.data().count);
+        //                         messagesCount = snapshot.data().count;
+        //                     })
+        //                     .catch(error => {
+        //                         console.error("Error fetching count:", error);
+        //                     });
+
+        //                 if (messagesCount > 1) {
+        //                     messageListener.onSnapshot((msgSnapshot) => {
+        //                         msgSnapshot.docChanges().forEach((msgChange) => {
+        //                             if (msgChange.type === "added") {
+        //                                 const message = msgChange.doc.data();
+        //                                 // io.to(conversation.id).emit('newMessage', {
+        //                                 //     id: msgChange.doc.id,
+        //                                 //     ...message
+        //                                 // });
+        //                                 io.emit('conversationUpdate', {
+        //                                     id: conversation.id,
+        //                                     lastMessage: message.message_content,
+        //                                     messageCount: msgSnapshot.size
+        //                                 });
+        //                             }
+        //                         });
+        //                     });
+
+        //                     activeMessageListeners.set(conversation.id, messageListener);
+        //                 }
+
+        //                 // Throttle emission per conversation:
+        //                 const lastEmission = lastOpenEmissionMap.get(conversation.id) || 0;
+        //                 if (
+        //                     Date.now() - lastEmission > THROTTLE_INTERVAL
+        //                     && conversation?.status === 'open'
+        //                     && conversation.messages?.length > 1
+        //                 ) {
+        //                     console.log("Emitting new conversation", conversation.id);
+        //                     io.emit("newConversation", conversation);
+        //                     lastOpenEmissionMap.set(conversation.id, Date.now());
+        //                 }
+        //             }
+        //         });
+        //     });
+
+
+
+
+        // const lastClosedEmissionMap = new Map();
+        // const CLOSED_THROTTLE_INTERVAL = 2000;
+
+        // const unsubscribeClosed = closedConvosQuery.onSnapshot((snapshot) => {
+        //     snapshot.docChanges().forEach((change) => {
+        //         const conversation = { id: change.doc.id, ...change.doc.data() };
+        //         const previousStatus = previousConversations.get(conversation.id);
+
+        //         // Cleanup message listener when conversation closes
+        //         if (activeMessageListeners.has(conversation.id)) {
+        //             activeMessageListeners.get(conversation.id)();
+        //             activeMessageListeners.delete(conversation.id);
+        //         }
+
+
+        //         // Only emit if status changed and sufficient time has passed
+        //         const lastEmission = lastClosedEmissionMap.get(conversation.id) || 0;
+        //         if (previousStatus !== "closed" && Date.now() - lastEmission > CLOSED_THROTTLE_INTERVAL) {
+        //             previousConversations.set(conversation.id, "closed");
+        //             io.emit("closedConversation", conversation);
+        //             lastClosedEmissionMap.set(conversation.id, Date.now());
+        //         }
+        //     });
+        // });
 
 
         // Handle disconnection
@@ -218,10 +218,10 @@ const initializeSocket = (io) => {
             unsubscribeOpen();
             unsubscribeClosed();
 
-            activeMessageListeners.forEach((unsub, id) => {
-                unsub();
-                activeMessageListeners.delete(id);
-            });
+            // activeMessageListeners.forEach((unsub, id) => {
+            //     unsub();
+            //     activeMessageListeners.delete(id);
+            // });
         });
 
     });
