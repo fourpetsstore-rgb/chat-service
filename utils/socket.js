@@ -133,10 +133,11 @@ const initializeSocket = (io) => {
                                 msgSnapshot.docChanges().forEach((msgChange) => {
                                     if (msgChange.type === "added") {
                                         const message = msgChange.doc.data();
-                                        io.to(conversation.id).emit('newMessage', {
-                                            id: msgChange.doc.id,
-                                            ...message
-                                        });
+                                        conversation.messages.push(message);
+                                        // io.to(conversation.id).emit('newMessage', {
+                                        //     id: msgChange.doc.id,
+                                        //     ...message
+                                        // });
                                         io.emit('conversationUpdate', {
                                             id: conversation.id,
                                             lastMessage: message.message_content,
