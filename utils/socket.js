@@ -102,6 +102,16 @@ const initializeSocket = (io) => {
             .where("status", "==", "open")
             .orderBy("created_at").startAfter(admin.firestore.Timestamp.now().toMillis() - 86400000) // 1 day
 
+            openConvosQuery.get().then((snapshot) => {
+                console.log(`Open conversations count: ${snapshot.size}`);
+                // snapshot.forEach((doc) => {
+                //     console.log(doc.id, '=>', doc.data());
+                // });
+            }).catch((error) => {
+                console.error('Error fetching open conversations:', error);
+            });
+
+
         // For closed conversations
         const closedConvosQuery = db.collection("conversations")
             .where("status", "==", "closed");
