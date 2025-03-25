@@ -154,7 +154,7 @@ const initializeSocket = (io) => {
                         if (
                             Date.now() - lastEmission > THROTTLE_INTERVAL
                             && conversation?.status === 'open'
-                            && messages?.length > 1
+                            && conversation?.messages?.length > 1
                         ) {
                             console.log("Emitting new conversation", conversation.id);
                             io.emit("newConversation", conversation);
