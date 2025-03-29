@@ -23,7 +23,6 @@ const initializeSocket = (io) => {
             }
         });
 
-
         // Send a new message
         socket.on('sendMessage', async (message, callback) => {
 
@@ -96,6 +95,7 @@ const initializeSocket = (io) => {
         });
 
         socket.on('createNotification', (payload) => {
+            console.log("Create new notification", payload);
             socket.emit('newNotification', payload)
         })
 
