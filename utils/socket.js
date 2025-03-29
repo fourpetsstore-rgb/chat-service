@@ -95,10 +95,8 @@ const initializeSocket = (io) => {
             }
         });
 
-        socket.on('new-notification', (payload) => {
-            console.log("New ntofication")
-            console.log("New ntofication with payload", payload)
-            socket.emit('newConversation', payload)
+        socket.on('createNotification', (payload) => {
+            socket.emit('newNotification', payload)
         })
 
         // Real-time listener for new conversations
