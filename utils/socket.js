@@ -1,6 +1,7 @@
 const { getConversationById } = require("../controllers/conversationsController");
 const { db, admin } = require("../firebaseConfig");
 
+const axios = require('axios');
 
 const initializeSocket = (io) => {
     io.on('connection', (socket) => {
@@ -27,8 +28,30 @@ const initializeSocket = (io) => {
         socket.on('sendMessage', async (message, callback) => {
 
             try {
+                const baseUrl = 'https://chat.bevatel.com'; // Replace with actual base URL
+                const apiAccessToken = 'kTpUq4fo74yfUrZrfBJqNYMi';  // Replace with actual token
+                const apiAccountId = '15582';
                 // console.log("New message send", message);
                 const parsedMessage = await JSON.parse(message);
+
+                let messageType = 0
+                const chatheaders = {
+                    api_access_token: apiAccessToken,
+                    'Content-Type': 'application/json'
+                };
+                if (parsedMessage.sender == "admin") {
+                    messageType = 1
+                }
+                const chatBody =
+                {
+                    content: String(parsedMessage.messageContent),
+                    message_type: messageType
+                }
+
+
+                const chaturl = `${baseUrl}/api/v1/accounts/${apiAccountId}/conversations/${parsedMessage.conversationId}/messages`;     // Replace with actual account ID
+                const response = await axios.post(chaturl, chatBody, { headers: chatheaders })
+                console.log(response.data)
 
 
                 // Validate conversationId
@@ -50,6 +73,7 @@ const initializeSocket = (io) => {
 
 
                 // Save message to Firestore
+                const conversationDoc = (await db.collection('conversations').doc(parsedMessage.conversationId).get()).data();
                 const newMessageRef = await db.collection('conversations')
                     .doc(parsedMessage.conversationId)
                     .collection('messages')
@@ -62,6 +86,28 @@ const initializeSocket = (io) => {
                         end_session: parsedMessage.endSession || false,
                         timestamp: admin.firestore.FieldValue.serverTimestamp(),
                     });
+                if (parsedMessage.sender == "user") {
+
+                    try {
+                        bodyToBass = {
+                            message: `${conversationDoc.user_name}:${parsedMessage.messageContent}`,
+                            title: 'رسالة جديدة'
+                        }
+                        const response = await axios.post(`${process.env.MEDUSA_BACKEND_URL}/store/webhooks/chatNotify`, bodyToBass, {
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+
+                        io.emit('newNotification', response.data)
+                    }
+                    catch (e) {
+                        console.log("error creating Notification")
+                    }
+                }
+
+
 
                 // console.log("New message ref", newMessageRef);
 
@@ -81,6 +127,7 @@ const initializeSocket = (io) => {
                     ...newMessage,
                 });
 
+
                 if (callback) {
                     callback({ status: 'success' });
                 }
@@ -94,10 +141,7 @@ const initializeSocket = (io) => {
             }
         });
 
-        socket.on('createNotification', (payload) => {
-            console.log("Create new notification", payload);
-            socket.emit('newNotification', payload)
-        })
+
 
         // Real-time listener for new conversations
         // For new conversations

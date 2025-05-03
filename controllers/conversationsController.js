@@ -1,4 +1,7 @@
+const { errorMonitor } = require("ws");
 const { admin, db } = require("../firebaseConfig");
+const axios = require('axios');
+const { userInfo } = require("os");
 
 
 const getAllConversations = async (req, res) => {
@@ -53,8 +56,46 @@ const createConversation = async (req, res, io) => {
     // });
 
     try {
+
+        const baseUrl = 'https://chat.bevatel.com'; // Replace with actual base URL
+        const apiAccessToken = 'kTpUq4fo74yfUrZrfBJqNYMi';  // Replace with actual token
+        const apiAccountId = '15582';      // Replace with actual account ID
+        let contactId = ""
+        const url = `${baseUrl}/developer/api/v1/contacts`;
+        const body = {
+            name: userName
+        }
+
+        const response = await axios.post(url, body, {
+            headers: {
+                api_access_token: apiAccessToken,
+                api_account_id: apiAccountId,
+                'Content-Type': 'application/json'
+
+            }
+        })
+        console.log(response.data.data.id)
+        contactId = response.data.data.id
+        const convurl = `${baseUrl}/api/v1/accounts/${apiAccountId}/conversations`;
+        let convId
+        const convbody =
+        {
+            inbox_id: 65301,
+            contact_id: Number(contactId)
+        }
+        const convResp = await axios.post(convurl, convbody, {
+            headers: {
+                api_access_token: apiAccessToken,
+                'Content-Type': 'application/json'
+
+            }
+        })
+        convId = convResp.data.id
+
         // Create a new conversation document
-        const newConversationRef = await db.collection('conversations').add({
+        const newConversationRef = await db.collection('conversations').doc(String(convId))
+        newConversationRef.set({
+
             user_id: userId ? userId : "Guest User", // If no user ID is provided, set as "Guest"
             user_name: userName,
             admin_assigned: null, // Initially, no admin assigned
@@ -63,6 +104,7 @@ const createConversation = async (req, res, io) => {
             last_message_timestamp: admin.firestore.FieldValue.serverTimestamp(),
             status: 'open', // Default status
         });
+
 
         // Add admin's first message to the 'messages' subcollection
         const newMessageRef = await newConversationRef.collection('messages').add({
@@ -90,8 +132,10 @@ const createConversation = async (req, res, io) => {
         });
 
         // Return the new conversation ID as part of the response
+        console.log("conversationId created with heeeereee ", newConversationRef.id)
         res.status(201).json({ conversationId: newConversationRef.id });
     } catch (err) {
+        console.log(err)
         res.status(500).json({ error: err.message });
     }
 };
