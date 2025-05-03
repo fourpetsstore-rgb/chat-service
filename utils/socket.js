@@ -92,9 +92,10 @@ const initializeSocket = (io) => {
                         bodyToBass = {
                             message: `${conversationDoc.user_name}: ${parsedMessage.messageContent}`,
                             title: 'رسالة جديدة',
-                            conversationId: parsedMessage.conversationId
+                            conversationId: parsedMessage.conversationId,
+                            resource_type: "message"
                         }
-                        const response = await axios.post(`${process.env.MEDUSA_BACKEND_URL}/store/webhooks/chatNotify`, bodyToBass, {
+                        const response = await axios.post(`${process.env.MEDUSA_BACKEND_URL}/store/webhooks/admin-notify`, bodyToBass, {
                             headers: {
                                 'Content-Type': 'application/json'
                             }
@@ -143,9 +144,29 @@ const initializeSocket = (io) => {
         });
 
 
-        socket.on('createNotification', (payload) => {
+        socket.on('createNotification', async (payload) => {
             console.log("Create new notification", payload);
-            socket.emit('newNotification', payload)
+
+            try {
+                bodyToBass = {
+                    message: payload?.title,
+                    title: payload?.message,
+                    resource_type: payload?.resource_type,
+                    resource_id: payload?.resource_id,
+                    action: payload?.action
+                }
+                const response = await axios.post(`${process.env.MEDUSA_BACKEND_URL}/store/webhooks/admin-notify`, bodyToBass, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+
+                io.emit('newNotification', response.data)
+            }
+            catch (e) {
+                console.log("error creating Notification")
+            }
         })
 
 
