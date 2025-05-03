@@ -147,26 +147,26 @@ const initializeSocket = (io) => {
         socket.on('createNotification', async (payload) => {
             console.log("Create new notification", payload);
 
-            try {
-                bodyToBass = {
-                    message: payload?.title,
-                    title: payload?.message,
-                    resource_type: payload?.resource_type,
-                    resource_id: payload?.resource_id,
-                    action: payload?.action
-                }
-                const response = await axios.post(`${process.env.MEDUSA_BACKEND_URL}/store/webhooks/admin-notify`, bodyToBass, {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
+            // try {
+            //     bodyToBass = {
+            //         message: payload?.title,
+            //         title: payload?.message,
+            //         resource_type: payload?.resource_type,
+            //         resource_id: payload?.resource_id,
+            //         action: payload?.action
+            //     }
+            //     const response = await axios.post(`${process.env.MEDUSA_BACKEND_URL}/store/webhooks/admin-notify`, bodyToBass, {
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         }
+            //     });
 
 
-                io.emit('newNotification', response.data)
-            }
-            catch (e) {
-                console.log("error creating Notification")
-            }
+            //     io.emit('newNotification', response.data)
+            // }
+            // catch (e) {
+            //     console.log("error creating Notification")
+            // }
         })
 
 
