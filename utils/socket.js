@@ -90,8 +90,9 @@ const initializeSocket = (io) => {
 
                     try {
                         bodyToBass = {
-                            message: `${conversationDoc.user_name}:${parsedMessage.messageContent}`,
-                            title: 'رسالة جديدة'
+                            message: `${conversationDoc.user_name}: ${parsedMessage.messageContent}`,
+                            title: 'رسالة جديدة',
+                            conversationId: parsedMessage.conversationId
                         }
                         const response = await axios.post(`${process.env.MEDUSA_BACKEND_URL}/store/webhooks/chatNotify`, bodyToBass, {
                             headers: {
