@@ -7,8 +7,9 @@ dotenv.config();
 // Send a new message
 const sendMessage = [
     // Validation rules
-    body('conversation_id').notEmpty().withMessage('Conversation ID is required.'),
+    
     body('sender_id').notEmpty().withMessage('Sender ID is required.'),
+    body('conversation_id').notEmpty().withMessage('Conversation ID is required.'),
     body('sender_name').notEmpty().withMessage('Sender name is required.'),
     body('message_content').notEmpty().withMessage('Message content is required.'),
     
